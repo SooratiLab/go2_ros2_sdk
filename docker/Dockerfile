@@ -4,12 +4,19 @@ FROM ${ROS_BASE_IMAGE}
 ARG INSTALL_COCO=false
 ARG INSTALL_CPP_LIDAR=false
 ARG INSTALL_FULL_STACK=false
+ARG APT_FORCE_IPV4=false
+ARG UBUNTU_PORTS_MIRROR=http://ports.ubuntu.com/ubuntu-ports
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_DEFAULT_TIMEOUT=600
 
 # Install basic requirements
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN if [ "${APT_FORCE_IPV4}" = "true" ]; then \
+      echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4; \
+    fi && \
+    sed -i "s|http://ports.ubuntu.com/ubuntu-ports|${UBUNTU_PORTS_MIRROR}|g" \
+      /etc/apt/sources.list && \
+    apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gnupg2 \
     lsb-release \
@@ -26,6 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Create workspace
 WORKDIR /ros2_ws
+ARG PIP_NO_INDEX=false
 
 # Copy dependency metadata separately so normal source edits retain this layer.
 COPY requirements-core.txt requirements-coco.txt /tmp/requirements/
@@ -34,11 +42,13 @@ COPY wheelhouse /opt/wheelhouse
 # Install the normal robot stack. COCO/PyTorch is deliberately opt-in because
 # generic ARM64 PyTorch wheels can download gigabytes of CUDA dependencies.
 RUN --mount=type=cache,target=/root/.cache/pip \
-    python3 -m pip install --retries 20 \
+    PIP_INDEX_ARGS="" && \
+    if [ "${PIP_NO_INDEX}" = "true" ]; then PIP_INDEX_ARGS="--no-index"; fi && \
+    python3 -m pip install --retries 20 ${PIP_INDEX_ARGS} \
       --find-links=/opt/wheelhouse \
       -r /tmp/requirements/requirements-core.txt && \
     if [ "${INSTALL_COCO}" = "true" ]; then \
-      python3 -m pip install --retries 20 \
+      python3 -m pip install --retries 20 ${PIP_INDEX_ARGS} \
         --find-links=/opt/wheelhouse \
         -r /tmp/requirements/requirements-coco.txt; \
     fi

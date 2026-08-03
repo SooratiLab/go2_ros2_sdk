@@ -154,6 +154,13 @@ cd docker
 INSTALL_CPP_LIDAR=true INSTALL_FULL_STACK=true docker compose build
 ```
 
+If a Jetson has broken IPv6 connectivity to Ubuntu or ROS package mirrors,
+set `APT_FORCE_IPV4=true` for the build rather than changing its host network.
+`UBUNTU_PORTS_MIRROR` can select a reachable ARM package mirror or local cache;
+its default remains Ubuntu's canonical ports archive.
+Set `PIP_NO_INDEX=true` to require a complete local `wheelhouse/` and prevent
+pip from contacting its package index.
+
 The image's normal launch is deliberately non-actuating. Build the full-stack
 variant before enabling GUI or control components, then override the command:
 

@@ -7,6 +7,9 @@ services:
         INSTALL_COCO: ${INSTALL_COCO:-false}
         INSTALL_CPP_LIDAR: ${INSTALL_CPP_LIDAR:-false}
         INSTALL_FULL_STACK: ${INSTALL_FULL_STACK:-false}
+        APT_FORCE_IPV4: ${APT_FORCE_IPV4:-false}
+        UBUNTU_PORTS_MIRROR: ${UBUNTU_PORTS_MIRROR:-http://ports.ubuntu.com/ubuntu-ports}
+        PIP_NO_INDEX: ${PIP_NO_INDEX:-false}
     environment:
       ROBOT_IP: ${ROBOT_IP:-}
       CONN_TYPE: ${CONN_TYPE:-webrtc}
