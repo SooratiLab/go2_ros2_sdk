@@ -90,10 +90,17 @@ sudo apt install ros-$ROS_DISTRO-vision-msgs
 
 sudo apt install python3-pip clang portaudio19-dev
 cd src
-pip install -r requirements.txt
+pip install -r requirements-core.txt
 cd ..
 ```
 Pay attention to any error messages. If `pip install` does not complete cleanly, various features will not work. For example, `open3d` does not yet support `python3.12` and therefore you will need to set up a 3.11 `venv` first etc.
+
+The COCO detector is optional because PyTorch and TorchVision are much larger
+than the robot SDK itself. Install it separately on machines that need it:
+
+```shell
+pip install -r requirements-coco.txt
+```
 
 Build `go2_ros_sdk`. You need to have `ros2` and `rosdep` installed. If you do not, follow these [instructions](https://docs.ros.org/en/humble/Installation.html). Then:
 ```shell
@@ -103,12 +110,58 @@ colcon build
 ```
 
 ## Running via Docker
-Can set environment variables beforehand, hardcoded in docker/docker-compose.yaml, or as shown below. 
+
+The default image contains the robot SDK, Python LiDAR processing, and speech
+support. It does not install the optional PyTorch COCO detector, C++/PCL LiDAR
+processor, or desktop navigation stack. It starts headless with Nav2, SLAM,
+joystick, and teleoperation disabled.
+
+Copy `.env.example` to `.env` and edit it, or provide the variables on the
+command line:
 
 Run:
 ```shell
 cd docker
-ROBOT_IP=<ROBOT_IP> CONN_TYPE=<webrtc/cyclonedds> docker-compose up --build
+ROBOT_IP=<ROBOT_IP> CONN_TYPE=<webrtc/cyclonedds> docker compose up --build
+```
+
+For CycloneDDS over Ethernet, `ROBOT_IP` may be empty:
+
+```shell
+cd docker
+CONN_TYPE=cyclonedds docker compose up --build
+```
+
+To include the CPU versions of PyTorch and TorchVision, opt in explicitly:
+
+```shell
+cd docker
+INSTALL_COCO=true docker compose build
+```
+
+On Jetson, generic PyTorch packages are not a substitute for NVIDIA's
+JetPack-matched packages. Put compatible wheel files in the ignored
+`wheelhouse/` directory before building, then build with
+`INSTALL_COCO=true`. The Docker build searches that directory before the
+package index. Do not commit wheel files.
+
+The C++ LiDAR processor pulls the large PCL/VTK development stack and the full
+desktop stack pulls RViz, Nav2, SLAM, Foxglove, and teleoperation packages. Add
+either only when needed:
+
+```shell
+cd docker
+INSTALL_CPP_LIDAR=true INSTALL_FULL_STACK=true docker compose build
+```
+
+The image's normal launch is deliberately non-actuating. Build the full-stack
+variant before enabling GUI or control components, then override the command:
+
+```shell
+INSTALL_FULL_STACK=true docker compose build
+docker compose run --rm unitree_ros ros2 launch go2_robot_sdk robot.launch.py \
+  rviz2:=false nav2:=false slam:=false foxglove:=false \
+  joystick:=true teleop:=true
 ```
 
 ## Usage

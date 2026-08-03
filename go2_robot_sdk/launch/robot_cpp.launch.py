@@ -5,8 +5,9 @@ from typing import List
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
 from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
 from launch.launch_description_sources import FrontendLaunchDescriptionSource, PythonLaunchDescriptionSource
 
@@ -44,12 +45,12 @@ class Go2LaunchConfig:
     
     def _determine_connection_mode(self) -> str:
         """Determine connection mode based on IP list and connection type"""
-        return "single" if len(self.robot_ip_list) == 1 and self.conn_type != "cyclonedx" else "multi"
+        return "single" if len(self.robot_ip_list) == 1 and self.conn_type != "cyclonedds" else "multi"
     
     def _get_rviz_config(self) -> str:
         """Get appropriate RViz configuration file"""
-        if self.conn_type == 'cyclonedx':
-            return "cyclonedx_config.rviz"
+        if self.conn_type == 'cyclonedds':
+            return "cyclonedds_config.rviz"
         elif self.conn_mode == 'single':
             return "single_robot_conf.rviz"
         else:
@@ -196,6 +197,15 @@ class Go2NodeFactory:
     
     def create_core_nodes(self) -> List[Node]:
         """Create core Go2 robot nodes"""
+        lidar_parameters = {
+            'map_name': self.config.map_name,
+            'map_save': self.config.save_map,
+        }
+        # ROS 2 Humble cannot infer a parameter type from an empty list. Let the
+        # node's declared default handle the no-IP/CycloneDDS case instead.
+        if self.config.robot_ip_list:
+            lidar_parameters['robot_ip_lst'] = self.config.robot_ip_list
+
         return [
             # Main robot driver (clean architecture)
             Node(
@@ -217,11 +227,7 @@ class Go2NodeFactory:
                 remappings=[
                     ('robot0/point_cloud2', 'point_cloud2'),  # Remap for single robot mode
                 ] if self.config.conn_mode == 'single' else [],
-                parameters=[{
-                    'robot_ip_lst': self.config.robot_ip_list,
-                    'map_name': self.config.map_name,
-                    'map_save': self.config.save_map
-                }],
+                parameters=[lidar_parameters],
             ),
             # Advanced point cloud aggregator (C++ implementation)
             Node(
@@ -314,10 +320,11 @@ class Go2NodeFactory:
         with_localization = LaunchConfiguration('localization', default='false')
         with_nav2 = LaunchConfiguration('nav2', default='true')
         
-        foxglove_launch = os.path.join(
-            get_package_share_directory('foxglove_bridge'),
-            'launch', 'foxglove_bridge_launch.xml'
-        )
+        foxglove_launch = PathJoinSubstitution([
+            FindPackageShare('foxglove_bridge'),
+            'launch',
+            'foxglove_bridge_launch.xml',
+        ])
         
         return [
             # Foxglove Bridge
@@ -327,10 +334,11 @@ class Go2NodeFactory:
             ),
             # SLAM Toolbox (for mapping - mutually exclusive with AMCL)
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([
-                    os.path.join(get_package_share_directory('slam_toolbox'),
-                                'launch', 'online_async_launch.py')
-                ]),
+                PythonLaunchDescriptionSource(PathJoinSubstitution([
+                    FindPackageShare('slam_toolbox'),
+                    'launch',
+                    'online_async_launch.py',
+                ])),
                 condition=IfCondition(with_slam),
                 launch_arguments={
                     'slam_params_file': self.config.config_paths['slam'],
@@ -339,10 +347,11 @@ class Go2NodeFactory:
             ),
             # AMCL (for localization with saved map - mutually exclusive with SLAM)
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([
-                    os.path.join(get_package_share_directory('nav2_bringup'),
-                                'launch', 'localization_launch.py')
-                ]),
+                PythonLaunchDescriptionSource(PathJoinSubstitution([
+                    FindPackageShare('nav2_bringup'),
+                    'launch',
+                    'localization_launch.py',
+                ])),
                 condition=IfCondition(with_localization),
                 launch_arguments={
                     'map': map_file,
@@ -352,10 +361,11 @@ class Go2NodeFactory:
             ),
             # Nav2
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([
-                    os.path.join(get_package_share_directory('nav2_bringup'),
-                                'launch', 'navigation_launch.py')
-                ]),
+                PythonLaunchDescriptionSource(PathJoinSubstitution([
+                    FindPackageShare('nav2_bringup'),
+                    'launch',
+                    'navigation_launch.py',
+                ])),
                 condition=IfCondition(with_nav2),
                 launch_arguments={
                     'params_file': self.config.config_paths['nav2'],

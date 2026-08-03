@@ -1,0 +1,16 @@
+.git
+.github
+.vscode
+.env
+build
+install
+log
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.coverage
+**/coverage.xml
+*.bag
+*.db3
+*.mcap
+*.ply

@@ -12,10 +12,10 @@ libs_path = os.path.join(
     get_package_share_directory('go2_robot_sdk'),
     'external_lib'
 )
+aioice_src_path = os.path.join(libs_path, 'aioice', 'src')
 
-if os.path.exists(os.path.join(libs_path, 'aioice', '__init__.py')):
-    sys.path.insert(0, os.path.join(libs_path, 'aioice'))
-    sys.path.insert(0, os.path.join(libs_path))
+if os.path.exists(os.path.join(aioice_src_path, 'aioice', '__init__.py')):
+    sys.path.insert(0, aioice_src_path)
 
     logger.info('Patched aioice added to sys.path: {}'.format(sys.path))
 else:

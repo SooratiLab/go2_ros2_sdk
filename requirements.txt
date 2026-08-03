@@ -1,13 +1,3 @@
-aiortc==1.9.0
-aiohttp
-paho-mqtt
-python-dotenv
-wasmtime
-open3d
-torch
-torchvision
-pycryptodome
-opencv-python
-pydub
-numpy==1.26.4
-
+# Default native development set. Install requirements-coco.txt separately
+# only on machines that need object detection.
+-r requirements-core.txt

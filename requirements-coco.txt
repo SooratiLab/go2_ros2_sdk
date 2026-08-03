@@ -1,0 +1,4 @@
+# Optional object detector. Keep this out of the default Jetson image: generic
+# PyTorch packages are large and can pull CUDA components unrelated to JetPack.
+torch==2.1.2
+torchvision==0.16.2
