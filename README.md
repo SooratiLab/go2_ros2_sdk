@@ -166,7 +166,7 @@ variant before enabling GUI or control components, then override the command:
 
 ```shell
 INSTALL_FULL_STACK=true docker compose build
-docker compose run --rm unitree_ros ros2 launch go2_robot_sdk robot.launch.py \
+ROBOT_IP=192.168.1.120 CONN_TYPE=cyclonedds docker compose run --rm unitree_ros ros2 launch go2_robot_sdk robot.launch.py \
   rviz2:=false nav2:=false slam:=false foxglove:=false \
   joystick:=true teleop:=true
 ```
