@@ -78,6 +78,9 @@ COPY . /ros2_ws/src
 RUN test -f /ros2_ws/src/go2_robot_sdk/external_lib/aioice/src/aioice/__init__.py || \
     (echo "Missing aioice submodule; clone with --recurse-submodules or run git submodule update --init --recursive" >&2; exit 1)
 
+# Copy CycloneDDS XML file into container
+COPY cyclonedds.xml /etc/cyclonedds.xml
+
 # Build the workspace
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
     if [ "${INSTALL_CPP_LIDAR}" = "true" ]; then \
@@ -96,6 +99,7 @@ ENV CONN_TYPE="webrtc"
 ENV WEBRTC_SERVER_HOST="0.0.0.0"
 ENV WEBRTC_SERVER_PORT="9991"
 ENV RMW_IMPLEMENTATION="rmw_cyclonedds_cpp"
+ENV CYCLONEDDS_URI="file:///etc/cyclonedds.xml"
 
 # add /ros2_ws to the entrypoint
 RUN sed --in-place --expression \
