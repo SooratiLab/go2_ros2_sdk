@@ -16,5 +16,6 @@ services:
       WEBRTC_SERVER_HOST: 0.0.0.0
       WEBRTC_SERVER_PORT: ${WEBRTC_SERVER_PORT:-9991}
       RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+      CYCLONEDDS_URI: 'file:///etc/cyclonedds.xml;<CycloneDDS><Domain><Discovery><Peers><Peer Address="${LAPTOP_TAILSCALE_IP}"/></Peers></Discovery></Domain></CycloneDDS>'
     network_mode: host
     restart: "no"

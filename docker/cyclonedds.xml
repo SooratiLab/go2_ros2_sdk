@@ -5,7 +5,7 @@
     </General>
     <Discovery>
       <Peers>
-        <Peer Address="100.73.177.29"/>
+        <!--IP will be injected dynamically via CYCLONEDDS_URI in docker-compose -->
       </Peers>
     </Discovery>
   </Domain>
