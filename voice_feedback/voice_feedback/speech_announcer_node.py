@@ -25,11 +25,13 @@ class SpeechAnnouncerNode(Node):
 
         self.current_candidate_state = None
         self.candidate_first_seen_time = 0.0
-
         self.last_announced_state = None
         self.speech_queue = queue.Queue()
 
-        self.tts_thread = threading.Thread(target=self._tts_worker, daemon=True)
+        self.create_timer(0.1, self.check_hold_time)
+        self.speech_queue = queue.Queue()
+
+        self.tts_thread = threading.Thread(target=self.tts_worker, daemon=True)
         self.tts_thread.start()
 
         self.get_logger().info(
@@ -41,21 +43,24 @@ class SpeechAnnouncerNode(Node):
         now = time.time()
 
         # Goal and arrival alerts bypass debounce and speak immediately
-        if "goal" in raw_state or "arrived" in raw_state:
-            self._enqueue_speech(raw_state)
+        if "goal" in raw_state or "arrived" in raw_state or "stopped before" in raw_state:
+            self.enqueue_speech(raw_state)
+            self.current_candidate_state = None
             return
 
         if raw_state != self.current_candidate_state:
             self.current_candidate_state = raw_state
-            self.candidate_first_seen_time = now
+            self.candidate_first_seen_time = time.time()
+
+    def check_hold_time(self):
+        if self.current_candidate_state is None:
             return
-
-        time_held = now - self.candidate_first_seen_time
-
-        if time_held >= self.hold_time and raw_state != self.last_announced_state:
-            self._enqueue_speech(raw_state)
-
-    def _enqueue_speech(self, text: str):
+    
+        time_held = time.time() - self.candidate_first_seen_time
+        if time_held >= self.hold_time and self.current_candidate_state != self.last_announced_state:
+            self.enqueue_speech(self.current_candidate_state)
+    
+    def enqueue_speech(self, text: str):
         self.get_logger().info(f"Announcing: '{text}'")
         with self.speech_queue.mutex:
             self.speech_queue.queue.clear()
@@ -63,9 +68,10 @@ class SpeechAnnouncerNode(Node):
         self.speech_queue.put(text)
         self.last_announced_state = text
 
-    def _tts_worker(self):
+    def tts_worker(self):
         engine = pyttsx3.init()
-        engine.setProperty('rate', 165)
+        #voices = engine.getProperty('voices') 
+        #engine.setProperty('voice', voices[1].id) #female voice
 
         while rclpy.ok():
             try:

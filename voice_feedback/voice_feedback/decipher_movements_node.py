@@ -51,13 +51,16 @@ class DecipherNode(Node):
 
         latest_status = msg.status_list[-1].status
 
-        # Status 2 = EXECUTING (Goal accepted from RViz)
+        #EXECUTING (Goal accepted from RViz)
         if latest_status == GoalStatus.STATUS_EXECUTING and self.last_goal_status != GoalStatus.STATUS_EXECUTING:
             self.publish_state("new goal received, starting navigation")
 
-        # Status 4 = SUCCEEDED (Arrived at destination)
+        #SUCCEEDED (Arrived at destination)
         elif latest_status == GoalStatus.STATUS_SUCCEEDED and self.last_goal_status == GoalStatus.STATUS_EXECUTING:
             self.publish_state("arrived at destination")
+
+        elif latest_status in (GoalStatus.STATUS_CANCELED, GoalStatus.STATUS_ABORTED) and self.last_goal_status == GoalStatus.STATUS_EXECUTING:
+            self.publish_state("navigation stopped before reaching destination")
 
         self.last_goal_status = latest_status
     
@@ -68,8 +71,10 @@ class DecipherNode(Node):
 
         state = self.determine_movement(vx, vy, wz)
 
-        if state:
+        #publish when state changes
+        if state and state != self.last_state: 
             self.publish_state(state)
+            self.last_state = state
 
     def determine_movement(self, vx: float, vy: float, wz: float) -> str:
         moving_linear = abs(vx) > self.lin_thresh or abs(vy) > self.lin_thresh
@@ -88,7 +93,7 @@ class DecipherNode(Node):
         descriptions = []
 
         if vx > self.lin_thresh:
-            descriptions.append("guided path forward")
+            descriptions.append("moving forward")
         elif vx < -self.lin_thresh:
             descriptions.append("backing up")
 
@@ -108,10 +113,7 @@ class DecipherNode(Node):
         msg_out = String()
         msg_out.data = state
         self.state_pub.publish(msg_out)
-
-        if state != self.last_state:
-            self.get_logger().info(f"State: {state}")
-            self.last_state = state
+        self.get_logger().info(f"State: {state}")
 
 def main(args=None):
     rclpy.init(args=args)
