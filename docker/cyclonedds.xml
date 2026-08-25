@@ -1,12 +1,26 @@
 <CycloneDDS xmlns="https://cdds.io/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
-  <Domain id="any">
+  <Domain id="0">
     <General>
-      <NetworkInterfaceAddress>auto</NetworkInterfaceAddress>
+      <NetworkInterfaceAddress>tailscale0</NetworkInterfaceAddress>
+      <AllowMulticast>false</AllowMulticast>
     </General>
     <Discovery>
       <Peers>
-        <!--IP will be injected dynamically via CYCLONEDDS_URI in docker-compose -->
+        <!-- Raspberry Pi 5 TAILSCALE IP - REPLACE THIS (tailscale ip -4 on Pi5) -->
+        <Peer Address="100.124.94.3"/>
       </Peers>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <MaxAutoParticipantIndex>30</MaxAutoParticipantIndex>
     </Discovery>
+    <Internal>
+      <FragmentSize>1200B</FragmentSize>
+      <SocketReceiveBufferSize min="10MB"/>
+      <Watermarks>
+        <WhcHigh>500kB</WhcHigh>
+      </Watermarks>
+    </Internal>
+    <Tracing>
+      <Verbosity>severe</Verbosity>
+    </Tracing>
   </Domain>
 </CycloneDDS>
