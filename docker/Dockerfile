@@ -79,7 +79,7 @@ RUN test -f /ros2_ws/src/go2_robot_sdk/external_lib/aioice/src/aioice/__init__.p
     (echo "Missing aioice submodule; clone with --recurse-submodules or run git submodule update --init --recursive" >&2; exit 1)
 
 # Copy CycloneDDS XML file into container
-COPY cyclonedds.xml /etc/cyclonedds.xml
+COPY docker/cyclonedds.xml /etc/cyclonedds.xml
 
 # Build the workspace
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
