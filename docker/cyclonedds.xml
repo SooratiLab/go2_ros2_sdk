@@ -6,7 +6,10 @@
       <FragmentSize>1200B</FragmentSize>
     </General>
     <Discovery>
-      <Peers><Peer Address="100.124.94.3"/></Peers>
+      <Peers>
+        <Peer Address="127.0.0.1"/>
+        <Peer Address="100.124.94.3"/>
+      </Peers>
       <ParticipantIndex>auto</ParticipantIndex>
       <MaxAutoParticipantIndex>30</MaxAutoParticipantIndex>
     </Discovery>
