@@ -1,0 +1,25 @@
+foxglove_bridge:
+  ros__parameters:
+    address: 127.0.0.1
+    port: 8765
+
+    # Advertising only known standard-message telemetry avoids unsupported
+    # Unitree schemas and malformed firmware topic names breaking graph polling.
+    topic_whitelist:
+      - "^/utlidar/(cloud|robot_pose|imu|range_info)$"
+      - "^/tf(_static)?$"
+      - "^/(path|cloud_registered|Odometry|map|scan|robot_description|joint_states|diagnostics)$"
+      - "^/foxglove_bridge/client_count$"
+    best_effort_qos_topic_whitelist:
+      - "^/utlidar/.*$"
+      - "^/(cloud_registered|scan)$"
+    include_hidden: false
+
+    # ROS 2 cannot infer the element type of an empty parameter list. This
+    # deliberately unknown token enables none of Foxglove's named capabilities.
+    capabilities: ["__none__"]
+    client_topic_whitelist: ["^$"]
+    service_whitelist: ["^$"]
+    param_whitelist: ["^$"]
+    sysinfo: false
+    publish_client_count: true

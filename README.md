@@ -30,13 +30,13 @@ If you are using WebRTC (Wi-Fi) protocol, close the connection with a mobile app
 7. Foot force sensors info in real time :white_check_mark: 
 8. Lidar stream (added pointCloud2) :white_check_mark: 
 9. Camera stream :white_check_mark:
-10. Foxglove bridge :white_check_mark:
+10. Foxglove read-only telemetry gateway :white_check_mark:
 11. Laser Scan :white_check_mark:
 12. Multi robot support :white_check_mark:
 13. WebRTC and CycloneDDS support :white_check_mark:
 14. Creating a PointCloud map and store it :white_check_mark:
 15. SLAM (slam_toolbox) :white_check_mark:
-16. Navigation (nav2) :white_check_mark:
+16. Navigation (Nav2 configuration present; physical command path not validated)
 17. Object detection (coco) :white_check_mark:
 18. AutoPilot
 
@@ -161,6 +161,14 @@ its default remains Ubuntu's canonical ports archive.
 Set `PIP_NO_INDEX=true` to require a complete local `wheelhouse/` and prevent
 pip from contacting its package index.
 
+For a Tailscale-connected Raspberry Pi display, use the isolated read-only
+gateway instead of enabling Foxglove in the all-in-one robot launch. See
+[Pi Touchscreen Navigation](docs/pi-touchscreen-nav.md) for deployment,
+end-to-end payload checks, safety boundaries, and the remaining Nav2 work. The
+[Festival Navigation Handoff](docs/festival-navigation-handoff.md) records the
+current Dog 2 deployment, repository responsibilities, and the assessment of a
+related waypoint-navigation implementation.
+
 The image's normal launch is deliberately non-actuating. Build the full-stack
 variant before enabling GUI or control components, then override the command:
 
@@ -259,6 +267,12 @@ The next time you start the system, the map can be loaded and is ready for you t
 
 ### Autonomous Navigation - navigating in your new map
 
+> [!WARNING]
+> The supplied Nav2 files are examples, not a validated real-robot command
+> path. Verify transforms, localization, costmaps, velocity limits, command
+> watchdogs, and operator stop behavior before allowing the output to actuate a
+> Go2.
+
 As shown in the `rviz` `Navigation 2` plugin, the system will come up in:
 
 ```shell
@@ -344,13 +358,12 @@ export CONN_TYPE="cyclonedds"
 <img width="1200" height="630" src="https://github.com/abizovnuralem/go2_ros2_sdk/assets/33475993/f0920d6c-5b7a-4718-b781-8cfa03a88095" alt='Foxglove bridge'>
 </p>
 
-To use Foxglove, you need to install Foxglove Studio:
-```
-sudo snap install foxglove-studio
-```
-
-1. Open Foxglove Studio and press "Open Connection".
-2. In the "Open Connection" settings, choose "Foxglove WebSocket" and use the default configuration ws://localhost:8765, then press "Open".
+For a local development session, open a Foxglove WebSocket connection to
+`ws://localhost:8765`. For a remote display, do not expose the unrestricted
+bridge from the all-in-one launch. The dedicated gateway has a telemetry topic
+allowlist and disables client publishing, service calls, and parameter access.
+Follow [Pi Touchscreen Navigation](docs/pi-touchscreen-nav.md) to connect over
+Tailscale and verify that live payloads, rather than only the TCP port, arrive.
 
 ## WebRTC Topic Interface
 

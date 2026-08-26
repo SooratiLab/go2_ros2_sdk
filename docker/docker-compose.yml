@@ -19,3 +19,55 @@ services:
       CYCLONEDDS_URI: 'file:///etc/cyclonedds.xml'
     network_mode: host
     restart: "no"
+
+  # Keep the presentation display separate from the robot driver. The bridge is
+  # intentionally subscription-only until the Nav2 command boundary has its own
+  # watchdog and physical acceptance tests.
+  foxglove_gateway:
+    profiles: ["foxglove"]
+    image: ${FOXGLOVE_GATEWAY_IMAGE:-go2-foxglove-gateway:humble}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        INSTALL_COCO: "false"
+        INSTALL_CPP_LIDAR: "false"
+        INSTALL_FULL_STACK: "true"
+        APT_FORCE_IPV4: ${APT_FORCE_IPV4:-false}
+        UBUNTU_PORTS_MIRROR: ${UBUNTU_PORTS_MIRROR:-http://ports.ubuntu.com/ubuntu-ports}
+        PIP_NO_INDEX: ${PIP_NO_INDEX:-false}
+    command:
+      - ros2
+      - run
+      - foxglove_bridge
+      - foxglove_bridge
+      - --ros-args
+      - --params-file
+      - /etc/foxglove-gateway.yaml
+      - -p
+      - address:=${FOXGLOVE_ADDRESS:-127.0.0.1}
+      - -p
+      - port:=${FOXGLOVE_PORT:-8765}
+    environment:
+      RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+      CYCLONEDDS_URI: file:///etc/cyclonedds-robot.xml
+    volumes:
+      - ./cyclonedds-robot.xml:/etc/cyclonedds-robot.xml:ro
+      - ./foxglove-gateway.yaml:/etc/foxglove-gateway.yaml:ro
+    network_mode: host
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /root/.ros
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import socket; socket.create_connection(('${FOXGLOVE_ADDRESS:-127.0.0.1}', ${FOXGLOVE_PORT:-8765}), 2).close()"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
